@@ -1,0 +1,60 @@
+---
+title: "Extra_CA_BMIxSmoking"
+author: "Calvin, Daniel and Eryk"
+date: "30/03/2023"
+output:
+  html_document:
+    df_print: paged
+---
+```{r}
+getwd()
+setwd("F:/Data Analytics CA/DATACA_LATEST/DATACA_LATEST")
+getwd()
+list.files()
+```
+
+# BMIxSmoking
+```{r BMIxSmoking}
+library(NHANES)
+library(dplyr)
+library(ggplot2)
+
+smoking <- read_xpt("SMQ_J.XPT")
+bmi <- read_xpt("BMX_J.XPT")
+demo <- read_xpt("Demographics.XPT")
+
+smoking_clean <- smoking %>%
+  select(SEQN, SMQ040, SMD030) %>%
+  filter(!is.na(SMQ040), !is.na(SMD030))
+
+demo_clean <- demo %>%
+  select(SEQN, RIAGENDR) %>%
+  filter(!is.na(RIAGENDR))
+
+bmi_clean <- bmi %>%
+  select(SEQN, BMXBMI) %>%
+  filter(!is.na(BMXBMI))
+
+data <- left_join(smoking_clean, bmi_clean, by = "SEQN") %>%
+  left_join(demo_clean, by = "SEQN")
+
+
+
+ggplot(data %>% filter(SMD030 >= 10, SMD030 <= 100), aes(x = SMD030, fill = factor(SMQ040))) +
+  geom_histogram() +
+  scale_fill_discrete(labels = c("Non-smoker", "Everyday smoker", "Some day's smoker")) +
+  labs(x = "Age started smoking", y = "Count", fill = "Smoking status") +
+  facet_wrap(~factor(RIAGENDR), nrow = 1) +
+  ggtitle("Distribution of Age Started Smoking by Gender")
+
+
+ggplot(data %>% filter(SMD030 >= 10, SMD030 <= 100), aes(x = SMD030, y = BMXBMI, color = factor(SMQ040))) +
+  geom_point() +
+  labs(x = "Age started smoking", y = "BMI", color = "Smoking status") +
+  facet_wrap(~factor(RIAGENDR), nrow = 1) +
+  scale_color_manual(values = c("1" = "green", "2" = "red", "3" = "blue"), 
+                     labels = c("Current smoker", "Former smoker", "Never smoked"))
+
+
+```
+

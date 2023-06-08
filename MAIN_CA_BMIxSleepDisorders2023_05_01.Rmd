@@ -1,0 +1,270 @@
+---
+title: "The Data Demon's"
+name: "Daniel Gallagher, Calvin Harvey, Eryk Gloginski"
+output: 
+  html_document:
+    df_print: paged
+---
+
+```{r set directory}
+getwd()
+setwd("C:/Users/L00158616/OneDrive - Atlantic TU/Data Analytics Project(60%)/Sleep Disorders and BMI - Daniels") #Daniels wd
+getwd()
+list.files()
+```
+
+## INTRODUCTION
+There has been extensive research in the literature on the connection between sleep disorders and body mass index (BMI). Sleep disorders, such as insomnia or sleep apnea, affect a large section of the population across the world. Obesity and other chronic health disorders are also significantly impacted by sleep disorders. BMI, a measure of body fat based on height and weight, has been used extensively as an indicator of obesity. It is crucial to comprehend this link to create efficient preventative and treatment plans since several studies have revealed a correlation between BMI and sleep disorders.
+
+### What question(s) are we asking?
+a) What is the relationship between sleep disorders and BMI among adults in the United States?
+b) Does this relationship vary by age, gender, or race/ethnicity?
+c) Are there any other factors that may affect this relationship, such as physical activity or diet?
+
+### Why are we asking them (justify)?
+a) Understanding the relationship between sleep disorders and BMI is important for several reasons. First, sleep disorders are a major risk factor for obesity and other chronic health conditions, and identifying modifiable risk factors is crucial for prevention and treatment.
+b) Secondly, obesity is a growing public health concern, and understanding how it affects sleep disorders is essential for developing effective interventions. Finally, there may be demographic or lifestyle factors that affect the relationship between BMI and sleep disorders, and identifying these factors can help tailor prevention and treatment strategies to specific populations.
+
+### Objectives
+a) To examine the relationship between sleep disorders and BMI among adults in the United States using NHANES data.
+b) To investigate whether this relationship varies by age, gender, or race/ethnicity.
+c) To explore other factors that may affect this relationship, such as physical activity or diet.
+d) Overall, the objectives of this report are to provide a comprehensive analysis of the relationship between sleep disorders and BMI in adults in the United States and identify potential risk factors for sleep disorders and other chronic health conditions.
+
+```{r Load the necessary libraries and the dataset}
+#install.packages("haven")
+
+library(haven)
+library(tidyverse)
+library(readr)
+
+# Load the datasets
+demo_data <- read_xpt("DEMO_J.XPT")
+bm_data <- read_xpt("BMX_J.XPT")
+slq_data <- read_xpt("SLQ_J.XPT")
+```
+
+
+## METHODS
+
+### State its usage policy (confirm that its open/public data)
+The National Health and Nutrition Examination Survey (NHANES) 2017-2018 dataset, carried out by the Centers for Disease Control and Prevention's National Center for Health Statistics (NCHS), provided the data for this study (CDC). NHANES, a key program, collects data on the population's health and nutritional status in the US.
+
+### How was the data collected? How is the data structured?
+To gather information on a sample of the US population that is nationally representative, NHANES 2017-2018 uses a complicated, multistage probability sampling technique. The study is carried out in two-year intervals, with data from about 10,000 people included in each cycle. Interviews, physical examinations, and laboratory testing are used to gather the data. The dataset contains data on demographics, socioeconomics, diet, and health, such as biomarkers, health behaviours, and medical problems. We concentrated on factors relating to sleep disorders, BMI, age, gender, race/ethnicity, physical activity, and diet for this study.
+
+### How big is the sample?
+Data from the 2017-2018 NHANES dataset were used for this study, resulting in a sample size of N adults. According to the NHANES's intention to produce estimates that are typical of the whole country's adult population, this sample is thought to be representative of the American adult population. The intricate survey design takes into consideration stratification, clustering, and nonresponse to assure the representativeness of the results.
+
+### Is it representative/relevant
+The NHANES dataset is designed to be nationally representative of the US population, making it an appropriate and relevant source of data for this analysis. The dataset's large sample size and diverse demographic characteristics further support its representativeness and relevance for our study.
+
+### What techniques were used to collect the data?
+Physical exams, in-person interviews, and laboratory testing are some of the data gathering methods utilized in the NHANES 2017-2018 dataset. The purpose of interviews is to collect data on demographics, socioeconomic status, and health-related activities. Interviews are done by qualified interviewers. To gather information on body measurements, sleep disorders, and other health indicators, physical examinations are carried out by skilled medical experts in mobile examination facilities. Blood lipid levels, glucose levels, and indicators of inflammation are just a few of the biomarkers that are evaluated in the laboratory using blood and urine samples.
+
+### What analyses (statistics) have you preformed on the data?
+a) Descriptive statistics: We calculated the mean, median, and standard deviation for both BMI and sleep disorders.
+b) Correlation analysis: We examined the correlation between BMI and sleep disorders to determine the strength and direction of the relationship.
+c) Linear regression analysis: We performed a linear regression analysis to model the relationship between BMI (independent variable) and sleep disorders (dependent variable), controlling for potential confounders such as age, gender, and race/ethnicity.
+d) Group comparisons: We conducted t-tests and analysis of variance (ANOVA) to compare sleep disorder levels across different BMI categories (e.g., underweight, normal weight, overweight, and obese).
+
+### Hypotheses for Statistical Tests
+a) No hypotheses are tested in descriptive statistics.
+Correlation analysis:
+a) Null hypothesis (H0): There is no correlation between BMI and sleep disorders.
+b) Alternative hypothesis (Ha): There is a correlation between BMI and sleep disorders.
+Linear regression analysis:
+a) Null hypothesis (H0): There is no relationship between BMI and sleep disorders.
+b) Alternative hypothesis (Ha): There is a relationship between BMI and sleep disorders.
+Group comparisons (t-tests and ANOVA):
+a) Null hypothesis (H0): There is no significant difference in sleep disorder levels across different BMI categories.
+b) Alternative hypothesis (Ha): There is a significant difference in sleep disorder levels across different BMI categories.
+
+### Which packages(versions), software etc did we use?
+We used the R statistical software (version 4.2.2) and pertinent packages, such as ggplot2 for data visualization, dplyr and tidyr for data processing, and survey for sophisticated survey data analysis, were used to conduct our analysis on the NHANES 2017-2018 dataset.
+
+### RESULTS 
+
+### Show all data hygiene, wrangling steps(code)
+During the data hygiene process, we merged the relevant datasets, filtered out participants with missing sleep disorder diagnosis or BMI values, and recoded categorical variables such as sleep disorder status and gender to ensure a clean and well-structured dataset for further analysis. This was achieved by combining the demographic, body measures, and sleep questionnaire datasets, followed by filtering the data for complete records and creating a binary sleep disorder variable.
+
+```{r Data hygiene, wrangling steps}
+# Merge the datasets
+combined_data <- demo_data %>%
+  inner_join(bm_data, by = "SEQN") %>%
+  inner_join(slq_data, by = "SEQN")
+
+# Filter for participants with sleep disorder diagnosis (SLQ050) and available BMI values (BMXBMI)
+cleaned_data <- combined_data %>%
+  filter(!is.na(SLQ050) & !is.na(BMXBMI))
+
+# Recode categorical variables (sleep disorder status and gender)
+cleaned_data <- cleaned_data %>%
+  mutate(SLQ050_binary = ifelse(SLQ050 == 1, 1, 0))
+```
+
+### Distribution and model/test assumption assessments
+We created various visualizations, including box plots, histograms, density plots, and violin plots, to assess the distribution of BMI values for individuals with and without sleep disorders. These visualizations allowed us to examine the overall shape of the data and detect any potential outliers or skewness.
+
+```{r Distribution and model/test assumption assessments}
+# Boxplot of BMI by sleep disorder status
+ggplot(cleaned_data, aes(x = as.factor(SLQ050), y = BMXBMI)) +
+  geom_boxplot() +
+  labs(x = "Sleep Disorder", y = "BMI") +
+  theme_minimal()
+
+# Histogram of BMI for individuals with and without sleep disorders
+ggplot(cleaned_data, aes(x = BMXBMI, fill = as.factor(SLQ050_binary))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(x = "BMI", y = "Frequency", fill = "Sleep Disorder") +
+  theme_minimal()
+
+# Density plot of BMI for individuals with and without sleep disorders
+ggplot(cleaned_data, aes(x = BMXBMI, fill = as.factor(SLQ050_binary))) +
+  geom_density(position = "identity", alpha = 0.5) +
+  labs(x = "BMI", y = "Density", fill = "Sleep Disorder") +
+  theme_minimal()
+
+# Violin plot of BMI by sleep disorder status
+ggplot(cleaned_data, aes(x = as.factor(SLQ050_binary), y = BMXBMI, fill = as.factor(SLQ050_binary))) +
+  geom_violin(alpha = 0.5) +
+  labs(x = "Sleep Disorder", y = "BMI", fill = "Sleep Disorder") +
+  theme_minimal()
+```
+
+### Descriptive inferential statistical analyses
+We calculated summary statistics, including mean and standard deviation of BMI, for each sleep disorder status group. Then, we performed an independent samples t-test to compare the mean BMI values between individuals with and without sleep disorders.
+
+```{r Descriptive inferential statistical analyses}
+# Summary statistics
+summary_stats <- cleaned_data %>%
+  group_by(SLQ050_binary) %>%
+  summarize(
+    mean_BMI = mean(BMXBMI, na.rm = TRUE),
+    sd_BMI = sd(BMXBMI, na.rm = TRUE),
+    n = n()
+  )
+
+# Independent samples t-test
+t_test_results <- t.test(BMXBMI ~ SLQ050_binary, data = cleaned_data)
+t_test_results
+```
+
+```{r Summary statistics by age group}
+# Creating age groups
+cleaned_data_age_group <- cleaned_data %>%
+  mutate(age_group = cut(RIDAGEYR, breaks = seq(0, 80, 10), include.lowest = TRUE))
+
+# Calculate summary statistics by age group and sleep disorder status
+summary_stats_age_group <- cleaned_data_age_group %>%
+  group_by(age_group, SLQ050_binary) %>%
+  summarize(
+    mean_BMI = mean(BMXBMI, na.rm = TRUE),
+    sd_BMI = sd(BMXBMI, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+```
+
+```{r Summary statistics by gender}
+# Convert RIAGENDR to a factor with appropriate labels
+cleaned_data <- cleaned_data %>%
+  mutate(RIAGENDR = factor(RIAGENDR, levels = c(1, 2), labels = c("Male", "Female")))
+
+# Calculate summary statistics by gender and sleep disorder status
+summary_stats_gender <- cleaned_data %>%
+  group_by(RIAGENDR, SLQ050_binary) %>%
+  summarize(
+    mean_BMI = mean(BMXBMI, na.rm = TRUE),
+    sd_BMI = sd(BMXBMI, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+```
+
+### Figures/Plots/Visualizations
+We created multiple visualizations, including box plots, histograms, density plots, and violin plots, to display the distribution of BMI values for individuals with and without sleep disorders. Additionally, we generated factored histograms and box plots to display the distribution of BMI values by age group and gender.
+
+```{r Factored Histogram of BMI by age group and gender}
+ggplot(cleaned_data_age_group, aes(x = BMXBMI, fill = factor(SLQ050_binary, levels = c(0, 1), labels = c("No Sleep Disorder", "Sleep Disorder")))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(x = "BMI", y = "Number of Individuals", fill = "Sleep Disorder", title = "BMI Distribution by Sleep Disorders and Demographics", subtitle = "Age Groups") +
+  facet_grid(RIAGENDR ~ age_group, labeller = labeller(RIAGENDR = as_labeller(c("1" = "Male", "2" = "Female")))) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "plain", size = rel(1)),
+        plot.subtitle = element_text(hjust = 0.5, face = "plain", size = rel(0.8)))
+```
+
+```{r Box plot of BMI by age group and gender}
+ggplot(cleaned_data_age_group, aes(x = age_group, y = BMXBMI, fill = as.factor(SLQ050_binary))) +
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Age Group", y = "BMI", fill = "Sleep Disorder") +
+  facet_wrap(~ RIAGENDR, labeller = as_labeller(c("1" = "Male", "2" = "Female"))) +
+  scale_x_discrete(expand = c(0.1, 0)) +
+  theme_minimal()
+```
+
+### Summary Tables
+We generated summary tables to display the mean and standard deviation of BMI values for each sleep disorder status group, as well as the results of the independent samples t-test. We also created summary tables for BMI values by age group and gender, providing additional insight into the relationship between sleep disorders and BMI across different demographic groups.
+
+```{r Showing Summary Tables and Summary statistics}
+print(summary_stats)
+
+# Print t-test results
+print(t_test_results)
+
+# Print summary statistics by age group
+print(summary_stats_age_group)
+
+# Print summary statistics by gender
+print(summary_stats_gender)
+```
+
+### Additional finding 1
+We have also attempted to find correlations between BMI x Systolic & Diastlic Blood Pressure and BMI & Smoking. There was a correlation between BMI x Systolic & Diastlic Blood Pressure in which we found out on a violin plot that the higher the BMI, the less there is of a variation of both Blood Pressure types. Thanks to this, we can assume that those people with BMI over 35 do not exercise as much as people with BMI under 35, potentially because they could find it difficult to move with such a big body mass. Unfortunately, these results were not too interesting or unique, so we decided to stick with BMI & Sleeping Disorders. 
+
+### Additional findings 2
+In addition to finding correlations between BMI x Systolic & Diastlic Blood Pressure we also found strong correlations between a person's BMI and Smoking. The correlation was found using a ggplot which shows the BMI of all the surveyed based of whether they smoke. The graph showed a high correlation between people who do smoke under the age of 30 having a higher BMI than someone twice their age that has never smoked. This data could be biased however as it is taken from a questionnaire so they data may not be representative and susceptible to misinformation and joke answers. It’s because of these reasons that this data was not one of the main talking points of our project.
+
+## CONCLUSIONS
+Our analysis aimed to explore the relationship between BMI and sleep disorders, with the hypothesis that individuals with sleep disorders have higher BMI than those without sleep disorders. Based on the provided data, we performed a series of statistical analyses to test this hypothesis.
+
+Our primary analysis was an independent samples t-test comparing the mean BMI values of individuals with sleep disorders (group 1) and without sleep disorders (group 0). The results showed a significant difference in the mean BMI values between the two groups (t = -10.56, df = 2319.7, p-value < 2.2e-16). The mean BMI of individuals with sleep disorders (31.33) was higher than that of individuals without sleep disorders (28.78).
+
+We also examined the relationship between BMI and sleep disorders across different age groups and genders. In all age groups and both genders, individuals with sleep disorders had a higher mean BMI than those without sleep disorders.
+
+### What is the strength/ limitations
+Strengths: The dataset used for this analysis was large and diverse, which increases the generalizability of the findings. The results are consistent across age groups and genders, which adds credibility to the observed relationship between BMI and sleep disorders.
+
+Limitations: The analysis is based on a cross-sectional dataset, which does not allow us to establish a causal relationship between sleep disorders and BMI. There might be confounding variables that were not accounted for in this analysis, such as lifestyle factors or other medical conditions that could be associated with both BMI and sleep disorders.
+
+### What would we do next?
+Given the limitations of this analysis, future research could focus on the following:
+
+1. Conducting a longitudinal study to establish a causal relationship between sleep disorders and BMI.
+
+2. Investigating potential confounding variables and their impact on the relationship between sleep disorders and BMI.
+
+3. Exploring potential mechanisms that could explain the relationship between sleep disorders and BMI, such as hormonal changes or altered energy metabolism.
+
+4. Examining the potential impact of different types of sleep disorders on BMI, as there might be varying effects depending on the specific disorder.
+
+5. Investigating potential interventions that could help individuals with sleep disorders manage their BMI and overall health.
+
+## References
+- National Center for Health Statistics (NCHS). (2020). National Health and Nutrition Examination Survey Data, 2017-2018. Hyattsville, MD: U.S. Department of Health and Human Services, Centers for Disease Control and Prevention. Retrieved from: https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2017. 
+
+#Appendix
+
+
+
+
+
+
+
+
+
+
+

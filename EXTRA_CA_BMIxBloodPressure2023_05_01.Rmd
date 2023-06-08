@@ -1,0 +1,361 @@
+---
+title: "The Data Demons BMI X Blood Pressure CA"
+author: "Calvin, Daniel and Eryk"
+date: "30/03/2023"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r import packages}
+#install.packages("nhanesA")
+library(nhanesA)
+#install.packages("NHANES")
+library(NHANES)
+#install.packages("haven")
+library(haven)
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("readr")
+library(readr)
+```
+
+```{r set directory}
+getwd()
+#setwd("D:/DATACA/")
+getwd()
+list.files()
+```
+
+```{r get list of EXAM tables in nhanes}
+nhanesTables('EXAM', 2017)
+nhanesTables('Q', 2017)
+nhanesTables('DEMO', 2017)
+```
+```{r read datasets}
+# various data
+dataset_BLOOD_PRESSURE <- read_xpt("BloodPressure-Examination.XPT")
+dataset_BLOOD_PRESSURE
+dataset_BODY_MASS <- read_xpt("BodyMeasures-Examination.XPT")
+dataset_BODY_MASS
+dataset_WHOLE_BODY_DATA <- read_xpt("WholeBodyDualXRay-Examination.XPT")
+dataset_WHOLE_BODY_DATA
+dataset_DIABETES <- read_xpt("Diabetes.XPT")
+dataset_DIABETES
+dataset_SLEEP_DISORDERS <- read_xpt("SleepDisorders.XPT")
+dataset_SLEEP_DISORDERS
+
+# demographics data that can be used to display data via age, etc
+dataset_DEMOGRAPHICS <- read_xpt("Demographics.XPT")
+dataset_DEMOGRAPHICS
+```
+
+```{r test join systolic or diastolic bp and bmi ggplot}
+# merge demographics and blood pressure datasets
+merged_DATA_1 <- merge(dataset_DEMOGRAPHICS, dataset_BLOOD_PRESSURE, by = "SEQN")
+# merge the merged data with body measures dataset
+merged_DATA_1 <- merge(merged_DATA_1, dataset_BODY_MASS, by = "SEQN")
+# display the merged data
+merged_DATA_1
+
+# calculate correlation between BMI and systolic blood pressure
+cor(merged_DATA_1$BMXBMI, merged_DATA_1$BPXSY1)
+# calculate correlation between BMI and diastolic blood pressure
+cor(merged_DATA_1$BMXBMI, merged_DATA_1$BPXDI1)
+
+library(ggplot2)
+# create scatter plot of BMI and systolic blood pressure
+ggplot(data = merged_DATA_1, aes(x = BMXBMI, y = BPXSY1)) +
+  geom_point() +
+  xlab("BMI") +
+  ylab("Systolic Blood Pressure")
+
+# create scatter plot of BMI and diastolic blood pressure
+ggplot(data = merged_DATA_1, aes(x = BMXBMI, y = BPXDI1)) +
+  geom_point() +
+  xlab("BMI") +
+  ylab("Diastolic Blood Pressure")
+
+```
+# Above is the ggplot of sbp and dbp over BMI
+
+```{r Data hygiene, wrangling steps}
+# Merge the datasets into one
+merged_MASS_BLOOD_PRESSURE <- dataset_DEMOGRAPHICS %>%
+  inner_join(dataset_BODY_MASS, by = "SEQN") %>%
+  inner_join(dataset_BLOOD_PRESSURE, by = "SEQN")
+
+# Filter for participants with systolic blood pressure (BPXSY1) and available BMI values (BMXBMI)
+merged_MASS_BLOOD_SYSTOLIC <- merged_MASS_BLOOD_PRESSURE %>%
+  filter(!is.na(BPXSY1) & !is.na(BMXBMI))
+
+# Filter for participants with diastolic blood pressure (BPXDI1) and available BMI values (BMXBMI)
+merged_MASS_BLOOD_DIASTOLIC <- merged_MASS_BLOOD_PRESSURE %>%
+  filter(!is.na(BPXDI1) & !is.na(BMXBMI))
+
+```
+
+```{r summary of blood pressure}
+# Summary statistics for systolic
+summary_MASS_BLOOD_SYSTOLIC <- merged_MASS_BLOOD_SYSTOLIC %>%
+  group_by(BMXBMI) %>%
+  summarize(
+    mean_SYSTOLIC_BP_1 = mean(BPXSY1, na.rm = TRUE),
+    sd_SYSTOLIC_BP_1 = sd(BPXSY1, na.rm = TRUE),
+    n = n()
+  )
+summary_MASS_BLOOD_SYSTOLIC
+
+# Summary statistics for diastolic
+summary_MASS_BLOOD_DIASTOLIC <- merged_MASS_BLOOD_DIASTOLIC %>%
+  group_by(BMXBMI) %>%
+  summarize(
+    mean_DIASTOLIC_BP_1 = mean(BPXDI1, na.rm = TRUE),
+    sd_DIASTOLIC_BP_1 = sd(BPXDI1, na.rm = TRUE),
+    n = n()
+  )
+summary_MASS_BLOOD_DIASTOLIC
+```
+
+```{r tests}
+# pearson's correlation for BPXSY1 and BMXBMI
+correlation_pearson_SYSTOLIC <- merged_MASS_BLOOD_SYSTOLIC %>%
+  select(BPXSY1, BMXBMI) %>%
+  cor(method = "pearson")
+cat("Pearson's correlation coefficient:", correlation_pearson_SYSTOLIC[1, 2], "\n")
+
+# pearson's correlation for BPXDI1 and BMXBMI
+correlation_pearson_DIASTOLIC <- merged_MASS_BLOOD_SYSTOLIC %>%
+  select(BPXDI1, BMXBMI) %>%
+  cor(method = "pearson")
+cat("Pearson's correlation coefficient:", correlation_pearson_DIASTOLIC[1, 2], "\n")
+
+# Calculate Spearman's rank correlation coefficient
+correlation_spearman_SYSTOLIC <- merged_MASS_BLOOD_SYSTOLIC %>%
+  select(BPXSY1, BMXBMI) %>%
+  cor(method = "spearman")
+
+# Print the correlation coefficient
+cat("Spearman's rank correlation coefficient:", correlation_spearman_SYSTOLIC[1, 2], "\n")
+
+# Calculate Spearman's rank correlation coefficient
+correlation_spearman_DIASTOLIC <- merged_MASS_BLOOD_DIASTOLIC %>%
+  select(BPXDI1, BMXBMI) %>%
+  cor(method = "spearman")
+
+# Print the correlation coefficient
+cat("Spearman's rank correlation coefficient:", correlation_spearman_DIASTOLIC[1, 2], "\n")
+```
+
+```{r linear regression for bmi and blood pressure}
+# linear regression for BPXSY1 and BMXBMI
+model_SYSTOLIC <- lm(BPXSY1 ~ BMXBMI, data = merged_MASS_BLOOD_SYSTOLIC)
+summary(model_SYSTOLIC)
+
+# linear regression for BPXDI1 and BMXBMI
+model_DIASTOLIC <- lm(BPXDI1 ~ BMXBMI, data = merged_MASS_BLOOD_DIASTOLIC)
+summary(model_DIASTOLIC)
+```
+
+```{r generalized linear regression for bmi and blood pressure}
+# Fit a generalized linear regression model
+model_general_SYSTOLIC <- glm(BPXSY1 ~ BMXBMI, data = merged_MASS_BLOOD_SYSTOLIC, family = gaussian)
+summary(model_general_SYSTOLIC)
+
+# Fit a generalized linear regression model
+model_general_DIASTOLIC <- glm(BPXDI1 ~ BMXBMI, data = merged_MASS_BLOOD_DIASTOLIC, family = gaussian)
+summary(model_general_DIASTOLIC)
+
+```
+
+```{r box plots with bmi for blood pressure}
+# Boxplot of BMI by systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC, aes(x = BMXBMI, y = as.factor(BPXSY1))) +
+  geom_boxplot() +
+  labs(x = "BMI", y = "Systolic BP 1") +
+  theme_minimal()
+
+# Boxplot of BMI by diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC, aes(x = BMXBMI, y = as.factor(BPXDI1))) +
+  geom_boxplot() +
+  labs(x = "BMI", y = "Diastolic BP 1") +
+  theme_minimal()
+
+```
+
+```{r Histogram of blood pressure and the frequency}
+# histogram of systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC, aes(x = BPXSY1)) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(x = "Systolic BP 1", y = "Frequency", fill = "BMI") +
+  theme_minimal()
+
+# histogram of diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC, aes(x = BPXDI1)) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(x = "Diastolic BP 1", y = "Frequency", fill = "BMI") +
+  theme_minimal()
+
+```
+
+```{r Density plot of blood pressure and the density}
+# density plot of systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC, aes(x = BPXSY1)) +
+  geom_density(position = "identity", alpha = 0.5) +
+  labs(x = "Systolic BP 1", y = "Density", fill = "BMI") +
+  theme_minimal()
+
+# density plot of diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC, aes(x = BPXDI1)) +
+  geom_density(position = "identity", alpha = 0.5) +
+  labs(x = "Diastolic BP 1", y = "Density", fill = "BMI") +
+  theme_minimal()
+
+```
+
+```{r Violin plot of BMI by blood pressure}
+# violin plot of systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC, aes(x = BPXSY1, y = BMXBMI)) +
+  geom_violin(alpha = 0.5) +
+  labs(x = "Systolic BP 1", y = "BMI", fill = "Systolic BP 1") +
+  theme_minimal()
+
+# violin plot of diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC, aes(x = BPXDI1, y = BMXBMI)) +
+  geom_violin(alpha = 0.5) +
+  labs(x = "Diastolic BP 1", y = "BMI", fill = "Diastolic BP 1") +
+  theme_minimal()
+
+```
+
+```{r Summary statistics by age group}
+# Create age groups
+merged_MASS_BLOOD_SYSTOLIC_BY_AGE <- merged_MASS_BLOOD_SYSTOLIC %>%
+  mutate(age_group = cut(RIDAGEYR, breaks = seq(0, 80, 10), include.lowest = TRUE))
+
+# Calculate summary statistics by age group and systolic blood pressure
+summary_MASS_BLOOD_SYSTOLIC_BY_AGE <- merged_MASS_BLOOD_SYSTOLIC %>%
+  group_by(RIDAGEYR) %>%
+  summarize(
+    mean_SYSTOLIC_BP_1 = mean(BPXSY1, na.rm = TRUE),
+    sd_SYSTOLIC_BP_1 = sd(BPXSY1, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+# Print summary statistics by age group
+summary_MASS_BLOOD_SYSTOLIC_BY_AGE
+summary(merged_MASS_BLOOD_SYSTOLIC_BY_AGE)
+
+# Create age groups
+merged_MASS_BLOOD_DIASTOLIC_BY_AGE <- merged_MASS_BLOOD_DIASTOLIC %>%
+  mutate(age_group = cut(RIDAGEYR, breaks = seq(0, 80, 10), include.lowest = TRUE))
+
+# Calculate summary statistics by age group and diastolic blood pressure
+summary_MASS_BLOOD_DIASTOLIC_BY_AGE <- merged_MASS_BLOOD_DIASTOLIC %>%
+  group_by(RIDAGEYR) %>%
+  summarize(
+    mean_DIASTOLIC_BP_1 = mean(BPXDI1, na.rm = TRUE),
+    sd_DIASTOLIC_BP_1 = sd(BPXDI1, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+# Print summary statistics by age group
+summary_MASS_BLOOD_DIASTOLIC_BY_AGE
+summary(merged_MASS_BLOOD_DIASTOLIC_BY_AGE)
+```
+
+```{r Summary statistics by gender}
+# Convert RIAGENDR to a factor with appropriate labels
+merged_MASS_BLOOD_SYSTOLIC_BY_GENDER <- merged_MASS_BLOOD_SYSTOLIC %>%
+  mutate(RIAGENDR = factor(RIAGENDR, levels = c(1, 2), labels = c("Male", "Female")))
+
+# Calculate summary statistics by gender and systolic blood pressure
+summary_MASS_BLOOD_SYSTOLIC_BY_GENDER <- merged_MASS_BLOOD_SYSTOLIC %>%
+  group_by(RIAGENDR) %>%
+  summarize(
+    mean_SYSTOLIC_BP_1 = mean(BPXSY1, na.rm = TRUE),
+    sd_SYSTOLIC_BP_1 = sd(BPXSY1, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+# Print summary statistics by gender
+summary_MASS_BLOOD_SYSTOLIC_BY_GENDER
+
+# Convert RIAGENDR to a factor with appropriate labels
+merged_MASS_BLOOD_DIASTOLIC_BY_GENDER <- merged_MASS_BLOOD_DIASTOLIC %>%
+  mutate(RIAGENDR = factor(RIAGENDR, levels = c(1, 2), labels = c("Male", "Female")))
+
+# Calculate summary statistics by gender and diastolic blood pressure
+summary_MASS_BLOOD_DIASTOLIC_BY_GENDER <- merged_MASS_BLOOD_DIASTOLIC %>%
+  group_by(RIAGENDR) %>%
+  summarize(
+    mean_SYSTOLIC_BP_1 = mean(BPXDI1, na.rm = TRUE),
+    sd_SYSTOLIC_BP_1 = sd(BPXDI1, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+# Print summary statistics by gender
+summary_MASS_BLOOD_DIASTOLIC_BY_GENDER
+
+```
+
+```{r Factored Histogram of BMI by age group and gender all in one}
+# Factored histogram of BMI by age group and gender for systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC_BY_AGE, aes(x = BPXSY1, fill = age_group)) +
+  geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
+  facet_wrap(~RIAGENDR) +
+  labs(title = "Histogram of Systolic Blood Pressure by Age Group and Gender",
+       x = "Systolic Blood Pressure",
+       y = "Count",
+       fill = "Age Group")
+
+# Factored histogram of BMI by age group and gender for diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC_BY_AGE, aes(x = BPXDI1, fill = age_group)) +
+  geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
+  facet_wrap(~RIAGENDR) +
+  labs(title = "Histogram of Diastolic Blood Pressure by Age Group and Gender",
+  x = "Diastolic Blood Pressure",
+  y = "Count",
+  fill = "Age Group")
+```
+
+```{r Factored Histogram of BMI by age group and gende one by one}
+# Factored histogram of BMI by age group and gender for systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC_BY_AGE, aes(x = BPXSY1, fill = factor(age_group))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(x = "Systolic Blood Pressure", y = "Number of Individuals", fill = "Age Group") +
+  facet_grid(RIAGENDR ~ age_group, labeller = labeller(RIAGENDR = as_labeller(c("1" = "Male", "2" = "Female")))) +
+  theme_minimal()
+
+# Factored histogram of BMI by age group and gender for diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC_BY_AGE, aes(x = BPXDI1, fill = factor(age_group))) +
+  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
+  labs(x = "Diastolic Blood Pressure", y = "Number of Individuals", fill = "Age Group") +
+  facet_grid(RIAGENDR ~ age_group, labeller = labeller(RIAGENDR = as_labeller(c("1" = "Male", "2" = "Female")))) +
+  theme_minimal()
+```
+
+```{r scatter plot with regression lines of BMI by blood pressure}
+# Scatter plot with regression lines of BMI by age group and gender for systolic blood pressure
+ggplot(merged_MASS_BLOOD_SYSTOLIC_BY_AGE, aes(x = age_group, y = BPXSY1, fill = factor(RIAGENDR, levels = c(1, 2), labels = c("Male", "Female")))) +
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Age Group", y = "Systolic Blood Pressure", fill = "Gender") +
+  facet_wrap(~ RIAGENDR, labeller = labeller(RIAGENDR = as_labeller(c("1" = "Male", "2" = "Female")))) +
+  scale_x_discrete(expand = c(0.1, 0)) +
+  theme_minimal()
+
+# Scatter plot with regression lines of BMI by age group and gender for diastolic blood pressure
+ggplot(merged_MASS_BLOOD_DIASTOLIC_BY_AGE, aes(x = age_group, y = BPXDI1, fill = factor(RIAGENDR, levels = c(1, 2), labels = c("Male", "Female")))) +
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Age Group", y = "Diastolic Blood Pressure", fill = "Gender") +
+  facet_wrap(~ RIAGENDR, labeller = labeller(RIAGENDR = as_labeller(c("1" = "Male", "2" = "Female")))) +
+  scale_x_discrete(expand = c(0.1, 0)) +
+  theme_minimal()
+```
+
