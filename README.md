@@ -1,2 +1,2 @@
 # Data-Analytics-Project
-My Data Analytics Project using R.
+My Grouped Data Analytics Project using R. 
