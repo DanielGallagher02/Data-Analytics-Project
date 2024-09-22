@@ -1,6 +1,6 @@
 # Data Analytics Group Project: BMI and Its Relationship with Sleep Disorders, Blood Pressure, and Smoking
 
-Welcome to my **Data Analytics Group Project** for my Data Analytics module in Semester 6. This project focuses on analyzing the relationship between Body Mass Index (BMI) and various health factors, such as sleep disorders, blood pressure, and smoking habits, using the **NHANES 2017-2018** dataset.
+Welcome to my **Data Analytics Group Project** for my Data Analytics module in Semester 6 for my BSc in Computing. This project focuses on analyzing the relationship between Body Mass Index (BMI) and various health factors, such as sleep disorders, blood pressure, and smoking habits, using the **NHANES 2017-2018** dataset.
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
