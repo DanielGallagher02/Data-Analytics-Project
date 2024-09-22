@@ -112,10 +112,10 @@ merged_data <- demo_data %>%
    ```
 
 2. **Generate Visualizations**: The R script will generate various visualizations, including:
-         - BMI distribution by sleep disorder status.
-         - Correlation plots between BMI and other health factors.
+      -   BMI distribution by sleep disorder status.
+      -   Correlation plots between BMI and other health factors.
 
-3. **View Results**: The script will output the descriptive statistics, correlation results, and regression models directly in the R console or as a saved output file.   
+4. **View Results**: The script will output the descriptive statistics, correlation results, and regression models directly in the R console or as a saved output file.   
 
    
 
