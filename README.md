@@ -1,6 +1,6 @@
 # Data Analytics Group Project: BMI and Its Relationship with Sleep Disorders, Blood Pressure, and Smoking
 
-Welcome to the **Data Analytics Group Project** for our Data Analytics module in Semester 6. This project focuses on analyzing the relationship between Body Mass Index (BMI) and various health factors, such as sleep disorders, blood pressure, and smoking habits, using the **NHANES 2017-2018** dataset.
+Welcome to my **Data Analytics Group Project** for my Data Analytics module in Semester 6. This project focuses on analyzing the relationship between Body Mass Index (BMI) and various health factors, such as sleep disorders, blood pressure, and smoking habits, using the **NHANES 2017-2018** dataset.
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -72,4 +72,52 @@ merged_data <- demo_data %>%
   inner_join(bm_data, by = "SEQN") %>%
   inner_join(slq_data, by = "SEQN")
 ```
+
+## Installation
+
+### Dependencies
+- **R** (version 4.2.2 or higher)
+- **RStudio** (optional, but recommended for running the R scripts)
+- **Required R packages**:
+  - ggplot2
+  - dplyr
+  - tidyr
+  - haven
+  - survey
+
+### Installing
+
+1. **Clone the Repository**:
+
+   ```bash
+   git clone https://github.com/yourusername/bmi-sleep-analysis.git
+   ```
+
+2. **Install Required R Packages: After opening R or RStudio, install the required packages**:
+   ```r
+   install.packages(c("ggplot2", "dplyr", "tidyr", "haven", "survey"))
+   ```
+
+3. **Download the NHANES 2017-2018 Dataset**: Download the dataset files from the CDC's NHANES website.
+4. **Set Up Working Directory**: Set the working directory to the location of the dataset files:
+   ```bash
+   setwd("path/to/dataset/folder")
+   ```
+
+### Executing Program   
+
+1. **Run the R Scripts**: After installing the necessary packages and setting up the dataset, run the provided R scripts to load and analyze the data.
+   ```r
+   source("data_analysis.R")
+   ```
+
+2. **Generate Visualizations**: The R script will generate various visualizations, including:
+         - BMI distribution by sleep disorder status.
+         - Correlation plots between BMI and other health factors.
+
+3. **View Results**: The script will output the descriptive statistics, correlation results, and regression models directly in the R console or as a saved output file.   
+
+   
+
+
 
