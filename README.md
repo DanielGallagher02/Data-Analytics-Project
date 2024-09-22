@@ -115,7 +115,48 @@ merged_data <- demo_data %>%
       -   BMI distribution by sleep disorder status.
       -   Correlation plots between BMI and other health factors.
 
-4. **View Results**: The script will output the descriptive statistics, correlation results, and regression models directly in the R console or as a saved output file.   
+4. **View Results**: The script will output the descriptive statistics, correlation results, and regression models directly in the R console or as a saved output file.
+
+## Usage
+
+The project provides a comprehensive analysis of the relationship between BMI and health factors using the NHANES 2017-2018 dataset.
+
+### Correlation Analysis
+Run the correlation analysis to examine how BMI is related to sleep disorders and other health outcomes.
+
+### Linear Regression
+The regression model allows you to predict sleep disorder status based on BMI while controlling for demographic variables like age and gender.
+
+### Group Comparisons
+Perform t-tests and ANOVA to compare different groups (e.g., smokers vs. non-smokers) and their health outcomes.
+
+## Contributors
+
+- **Daniel Gallagher** - Lead Data Analyst responsible for the BMI and sleep disorder correlation analysis.
+- **Calvin Harvey** - Data Scientist responsible for blood pressure and smoking analysis.
+- **Eryk Gloginski** - Data Visualization Specialist responsible for visualizing trends across demographic groups.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Help
+
+If you encounter any issues during the setup or execution of the analysis, ensure the following:
+
+- **R** and required packages are installed correctly.
+- The **NHANES dataset** files are downloaded and placed in the correct directory.
+- The **working directory** in the R script matches the location of your dataset files.
+
+If problems persist, please contact the contributors for assistance.
+
+## Acknowledgments
+
+Special thanks to:
+
+- **NHANES** for providing the dataset used in this analysis.
+- **RStudio** for offering a robust IDE for R development.
+- **Stack Overflow** for providing valuable troubleshooting advice during the development process.
 
    
 
